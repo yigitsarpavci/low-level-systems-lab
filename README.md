@@ -16,6 +16,7 @@ A laboratory of low-level systems programming implementations, bare-metal hardwa
 | **[01. Zero-Libc x86-64 CPU Scheduler](./01-x86-64-cpu-scheduler)** | x86-64 GNU Assembly | Linux Kernel (Direct Syscalls) | FCFS, SJF, SRTF, Priority First, Round Robin |
 | **[02. Bare-Metal RISC-V Navigator](./02-bare-metal-riscv-simulator)** | RISC-V Assembly (RV32I) | Spike ISA Simulator (Bare-Metal) | Custom Linker Script (`.ld`), HTIF Driver, ABI Stack Framing |
 | **[03. Unix Command Interpreter](./03-unix-command-interpreter)** | C11, POSIX Shell | Linux / Unix | Recursive Descent Parser, Grammar Backtracking, `fork`/`exec` |
+| **[04. CoreMark Performance Profiling](./04-coremark-performance-profiling)** | C11, Clang/LLVM, GCC | Apple Silicon (M2 ARM64) & RISC-V | Compiler Flags (`-O0` to `-Ofast`), ISA Extensions (M, C, GC), ILP |
 
 ---
 
@@ -44,6 +45,12 @@ A laboratory of low-level systems programming implementations, bare-metal hardwa
 - **Grammar & Parsing:** Custom parser handling command sequences, token lookaheads, and grammar backtracking for ambiguous syntax constructs.
 - **Process Management:** POSIX process lifecycles via `fork()`, `execvp()`, I/O redirection (`dup2`), and status evaluation (`waitpid`).
 
+### 4. CoreMark Performance Profiling (`04-coremark-performance-profiling`)
+- **Philosophy:** Rigorous empirical evaluation of EEMBC CoreMark v1.0 benchmark throughput across compiler optimization flags, instruction-level parallelism (ILP), and hardware execution architectures.
+- **Architectures Profiled:** Apple Silicon (M2 ARM64, Clang/LLVM) vs. RISC-V (CORE-V Wally, GCC).
+- **Optimization Analysis:** Evaluated compiler transformations from `-O0` to `-Ofast` (`-march=native`), tracking Iterations/sec, instruction count reduction, vectorization, and cache effects.
+- **ISA Extension Benchmarking:** Comparative analysis of hardware vs. software multiply/divide and code density across RISC-V extensions (RV32I, RV32IM, RV32IMC, RV32GC, RV64I), automated via Python and Bash test harnesses.
+
 ---
 
 ## Build & Run
@@ -68,6 +75,10 @@ spike --isa=rv32i flight.elf
 cd ../03-unix-command-interpreter
 make
 ./spireslayer
+
+# 4. Run CoreMark Profiling Benchmarks
+cd ../04-coremark-performance-profiling
+python3 scripts/run_benchmarks.py
 ```
 
 ---
