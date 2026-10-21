@@ -1,0 +1,11 @@
+my-outputs/
+spireslayer
+*.o
+spireslayer
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Grading output
+grade_output.txt

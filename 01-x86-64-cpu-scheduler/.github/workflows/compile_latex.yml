@@ -1,0 +1,33 @@
+name: Compile LaTeX Report
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+
+jobs:
+  build_latex:
+    runs-on: ubuntu-latest
+    container:
+      image: gokceuludogan/cmpe230-spring26:latest
+      options: --user root
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install LaTeX dependencies
+        run: |
+          apt-get update && \
+          DEBIAN_FRONTEND=noninteractive apt-get install -y texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-pictures
+
+      - name: Compile LaTeX
+        run: |
+          pdflatex -interaction=nonstopmode report.tex
+
+      - name: Commit and push PDF
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add report.pdf
+          git commit -m "CI: Professional LaTeX build from Docker container" || echo "No changes to commit"
+          git push
