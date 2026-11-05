@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+import os
 import subprocess
 import re
 import json
@@ -16,7 +16,9 @@ CONFIGS = [
     {"name": "-O3 -march=native", "xcflags": "-O3 -march=native"},
 ]
 
-COREMARK_DIR = "/Users/sarp/Desktop/docs/code/dersler/cmpe344/prelab2/coremark"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
+COREMARK_DIR = os.environ.get("COREMARK_DIR", os.path.join(REPO_ROOT, "coremark"))
 RUNS_PER_CONFIG = 5
 
 def parse_output(output):
@@ -103,10 +105,12 @@ def run_benchmarks():
             "max": max(run_values)
         }
         
-    out_file = "/Users/sarp/Desktop/docs/code/dersler/cmpe344/prelab2/benchmark_results.json"
-    with open(out_file, "w") as f:
-        json.dump(results, f, indent=2)
-    print(f"\nBenchmark suite complete! Results saved to {out_file}")
+        out_dir = os.path.join(REPO_ROOT, "results")
+        os.makedirs(out_dir, exist_ok=True)
+        out_file = os.path.join(out_dir, "benchmark_results.json")
+        with open(out_file, "w") as f:
+            json.dump(results, f, indent=2)
+        print(f"\nBenchmark suite complete! Results saved to {out_file}")
 
 if __name__ == "__main__":
     run_benchmarks()

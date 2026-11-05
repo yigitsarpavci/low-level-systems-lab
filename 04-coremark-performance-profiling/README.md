@@ -231,10 +231,10 @@ This project is licensed under the **MIT License**. CoreMark source code is subj
 
 ## Related Projects
 
-- **[Solar-Escape-RISCV-Navigator](https://github.com/yigitsarpavci/bare-metal-riscv-simulator)**: Bare-metal RISC-V assembly simulation for fuel-constrained westward autonomous navigation.
-- **[SchedSim-CPU-Scheduler](https://github.com/yigitsarpavci/x86-64-cpu-scheduler)**: Low-level CPU scheduling simulator written in x86-64 GNU Assembly.
-- **[Aura-Functional-Interpreter](https://github.com/yigitsarpavci/functional-language-interpreter)**: Custom functional programming language interpreter with static/dynamic scoping.
-- **[Nightpass-A-Survival-Card-Game](https://github.com/yigitsarpavci/state-machine-card-game)**: Turn-based survival card game engine focusing on algorithmic fairness.
+- **[SchedSim-CPU-Scheduler](../01-x86-64-cpu-scheduler)**: Zero-libc CPU scheduling simulator written in pure x86-64 GNU Assembly using direct Linux kernel syscalls.
+- **[Solar-Escape-RISCV-Navigator](../02-bare-metal-riscv-simulator)**: Bare-metal RISC-V (RV32I) assembly simulation for fuel-constrained westward autonomous navigation on Spike.
+- **[Unix-Command-Interpreter](../03-unix-command-interpreter)**: Modular C11 Unix shell featuring a recursive descent parser and grammar backtracking.
+- **[RISC-V-Pipeline-Hazard-Analysis](../05-riscv-pipeline-hazard-analysis)**: Cycle-accurate CORE-V Wally (`rv32i`) 5-stage RTL pipeline and hazard verification using Verilator and GTKWave.
 
 ---
 

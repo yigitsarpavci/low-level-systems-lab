@@ -1,86 +1,59 @@
-###############################################################################
-# SCHEDSIM ASSEMBLY OPTIMIZATION & REFACTORING REPORT
-# Target: x86-64 GNU Assembly (Linux)
-###############################################################################
+# SchedSim Assembly Optimization & Refactoring Report
 
-This report outlines professional-grade optimizations and architectural 
-improvements that could be applied to the SchedSim project. These suggestions 
-aim to reduce code redundancy, improve performance, and enhance memory safety.
+**Target:** x86-64 GNU Assembly (Linux Kernel Syscalls)
+
+This report outlines architectural optimizations and low-level refactoring strategies applicable to the `SchedSim` CPU scheduler implementation to reduce instruction footprint, eliminate branching overhead, and strengthen memory safety.
 
 ---
 
-1. CODE REDUNDANCY & MODULARITY: MACRO IMPLEMENTATION
-------------------------------------------------------
-Current Issue:
-The logic for parsing multi-digit integers from the input string is repeated 
-four times (burst time, arrival time, priority, and quantum). This increases 
-the binary size and makes maintenance harder.
+## 1. Code Redundancy & Modularity: Preprocessor Macros
 
-Proposed Optimization:
-Implement a preprocessor macro (e.g., %macro PARSE_INT 1) to encapsulate the 
-numeric accumulation logic.
+- **Current Implementation:** Multi-digit ASCII-to-integer parsing is repeated across four separate input fields (burst time, arrival time, priority, and time quantum).
+- **Optimization:** Encapsulate numeric accumulation inside an assembler macro (e.g., `.macro PARSE_INT reg`).
+- **Architectural Benefit:**
+  - Enforces the DRY (Don't Repeat Yourself) principle across register-heavy parsing loops.
+  - Reduces manual label/jump errors and improves source maintainability.
 
-2. DISPATCH LOGIC: JUMP TABLES
--------------------------------
-Current Issue:
-The `parse_algorithm` routine uses a chain of 'cmp' and 'je' instructions to 
-dispatch to the correct simulation function. This is an O(N) operation.
+## 2. O(1) Algorithm Dispatch: Jump Tables
 
-Proposed Optimization:
-Implement a "Jump Table" (an array of memory addresses). The dispatch would 
-simply be: `jmp *(algo_table, %rax, 8)`.
+- **Current Implementation:** The `parse_algorithm` routine evaluates a sequential chain of `cmp` and `je` instructions to dispatch the selected scheduling policy ($O(N)$ comparisons).
+- **Optimization:** Replace conditional branch chains with an indexed 8-byte address jump table (`jmp *algo_table(,%rax,8)`).
+- **Architectural Benefit:**
+  - Guarantees $O(1)$ constant-time dispatch regardless of the number of scheduling policies.
+  - Eliminates branch misprediction penalties during initialization.
 
-3. MEMORY SAFETY: BOUNDARY CHECKING
-------------------------------------
-Current Issue:
-The `append_output` function assumes the `output_buf` (4096 bytes) is always 
-sufficient. There is no check to prevent a buffer overflow if the combined 
-burst times exceed the buffer capacity.
+## 3. Memory Safety: Output Buffer Boundary Checking
 
-Proposed Optimization:
-Add a boundary check at the start of `append_output`:
-`cmp $4096, %rcx; jge handle_overflow_error`.
+- **Current Implementation:** The `append_output` routine assumes the 4096-byte `.bss` output buffer (`output_buf`) is sufficient for the entire simulation trace.
+- **Optimization:** Insert a bounds guard prior to buffer writes (`cmp $4096, %rcx; jge flush_or_error`).
+- **Architectural Benefit:**
+  - Prevents `.bss` buffer overflows and segmentation faults on long-running process traces.
 
-4. MEMORY ARCHITECTURE: DATA TYPE PACKING
-------------------------------------------
-Current Issue:
-The project uses 8-byte (quad-word) slots for all data, including single 
-characters (proc_id) and small integers (burst/priority < 255).
+## 4. Cache Locality: Process Control Block (PCB) Data Packing
 
-Proposed Optimization:
-Use appropriate data widths:
-- proc_id: .byte (1 byte)
-- proc_burst/priority: .byte or .word (1 or 2 bytes)
+- **Current Implementation:** Process attributes use uniform 8-byte quadword (`quad`) slots even for single-byte identifiers (`proc_id`) and bounded integer fields.
+- **Optimization:** Pack PCB arrays using narrow data widths (`.byte` for IDs and priorities, `.word` for burst/arrival times).
+- **Architectural Benefit:**
+  - Shrinks the `.bss` memory footprint by up to 75%.
+  - Significantly improves L1 data cache line utilization during inner-loop process table scans.
 
-5. PERFORMANCE: FUNCTION INLINING
-----------------------------------
-Current Issue:
-Small utility functions like `append_output` are called thousands of times 
-during simulation. The overhead of 'push/pop/call/ret' can become measurable.
+## 5. Call Overhead Elimination: Routine Inlining
 
-Proposed Optimization:
-Manually inline the output logic into the inner loops of the algorithms or 
-use macros for output.
+- **Current Implementation:** Small utility routines such as `append_output` are invoked on every simulated time tick via `call`/`ret` instructions.
+- **Optimization:** Inline tick-logging logic directly into the inner scheduling loops or expand via assembler macros.
+- **Architectural Benefit:**
+  - Eliminates repetitive stack pointer (`%rsp`) adjustments and return-address pipeline stalls across thousands of simulation ticks.
 
-6. SYSTEM INTERFACE: SYSCALL WRAPPERS
---------------------------------------
-Current Issue:
-Linux syscalls (read/write/exit) are manually set up every time, leading 
-to boilerplate code.
+## 6. OS Interface Abstraction: Syscall Wrappers
 
-Proposed Optimization:
-Create macros for standard I/O:
-- %macro WRITE_STDOUT buffer, len
-- %macro EXIT code
+- **Current Implementation:** Linux kernel syscall registers (`%rax`, `%rdi`, `%rsi`, `%rdx`) are populated inline before each `syscall` instruction.
+- **Optimization:** Define structured `.macro WRITE_FD` and `.macro SYS_EXIT` wrappers.
+- **Architectural Benefit:**
+  - Isolates ABI register clobbering (`%rcx`, `%r11`) and highlights core scheduling control flow.
 
-7. ALGORITHMIC EFFICIENCY: RR QUEUE MANAGEMENT
------------------------------------------------
-Current Issue:
-The Round Robin queue uses an array with manual circular wrapping logic.
+## 7. Bitwise Round-Robin Queue Wrapping
 
-Proposed Optimization:
-If the queue size is a power of 2 (e.g., 16 instead of 10), wrapping can 
-be done with a single `and $15, %reg` instead of a comparison and conditional 
-jump/reset.
-
----
+- **Current Implementation:** The Round-Robin ready queue wraps head and tail indices using explicit bounds comparisons and conditional jumps.
+- **Optimization:** Size the circular queue to a power of two (e.g., 16 slots) and wrap indices via bitwise masking (`and $15, %reg`).
+- **Architectural Benefit:**
+  - Replaces conditional branch instructions with a single-cycle bitwise ALU operation.
