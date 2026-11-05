@@ -17,6 +17,7 @@ A laboratory of low-level systems programming implementations, bare-metal hardwa
 | **[02. Bare-Metal RISC-V Navigator](./02-bare-metal-riscv-simulator)** | RISC-V Assembly (RV32I) | Spike ISA Simulator (Bare-Metal) | Custom Linker Script (`.ld`), HTIF Driver, ABI Stack Framing |
 | **[03. Unix Command Interpreter](./03-unix-command-interpreter)** | C11, POSIX Shell | Linux / Unix | Recursive Descent Parser, Grammar Backtracking, `fork`/`exec` |
 | **[04. CoreMark Performance Profiling](./04-coremark-performance-profiling)** | C11, Clang/LLVM, GCC | Apple Silicon (M2 ARM64) & RISC-V | Compiler Flags (`-O0` to `-Ofast`), ISA Extensions (M, C, GC), ILP |
+| **[05. RISC-V Pipeline & Hazard Analysis](./05-riscv-pipeline-hazard-analysis)** | RISC-V Assembly (RV32I), SystemVerilog RTL | CORE-V Wally (Verilator & GTKWave) | 5-Stage Pipeline (`F`–`W`), RAW Forwarding (`W -> E`), Load-Use Stall (`StallF`/`StallD`), Branch Flush |
 
 ---
 
@@ -51,6 +52,12 @@ A laboratory of low-level systems programming implementations, bare-metal hardwa
 - **Optimization Analysis:** Evaluated compiler transformations from `-O0` to `-Ofast` (`-march=native`), tracking Iterations/sec, instruction count reduction, vectorization, and cache effects.
 - **ISA Extension Benchmarking:** Comparative analysis of hardware vs. software multiply/divide and code density across RISC-V extensions (RV32I, RV32IM, RV32IMC, RV32GC, RV64I), automated via Python and Bash test harnesses.
 
+### 5. RISC-V Pipeline & Hazard Analysis (`05-riscv-pipeline-hazard-analysis`)
+- **Philosophy:** Cycle-accurate RTL waveform verification of the 5-stage pipelined **CORE-V Wally (`rv32i`)** processor (`F`, `D`, `E`, `M`, `W`) using **Verilator** VCD traces and **GTKWave**.
+- **Control Hazard Resolution:** Traces static predict-not-taken branch evaluation in Execute (`PCSrcE = 1`) and two-stage wrong-path squashing via synchronous `FlushD` and `FlushE` assertions.
+- **Data Forwarding Network:** Verifies zero-stall read-after-write (RAW) hazard resolution via `W -> E` bypass multiplexers (`ForwardAE = 2'b01`, `ForwardBE = 2'b01`) routing `ResultW` directly to the ALU.
+- **Load-Use Interlock Engineering:** Custom bare-metal RV32I testbench (`lw` immediately followed by dependent `add`) triggering hardware hazard unit assertions (`StallF = 1`, `StallD = 1`, `FlushE = 1`) to freeze front-end registers and inject a single-cycle `nop` bubble before completing `W -> E` forwarding.
+
 ---
 
 ## Build & Run
@@ -79,6 +86,11 @@ make
 # 4. Run CoreMark Profiling Benchmarks
 cd ../04-coremark-performance-profiling
 python3 scripts/run_benchmarks.py
+
+# 5. Assemble & Simulate RV32I Pipeline Hazards on CORE-V Wally (Verilator)
+cd ../05-riscv-pipeline-hazard-analysis
+make docker-build
+make docker-sim
 ```
 
 ---

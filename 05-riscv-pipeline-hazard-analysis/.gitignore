@@ -1,0 +1,40 @@
+# Build & simulation artifacts
+build/
+*.o
+*.elf
+*.objdump
+*.vcd
+*.bin
+*.out
+*.log
+
+# LaTeX temporary files
+report/*.aux
+report/*.log
+report/*.out
+report/*.synctex.gz
+report/*.toc
+report/*.fls
+report/*.fdb_latexmk
+
+# macOS files
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor temporary files
+*~
+*.swp
+.vscode/
+
+# Archived local course artifacts
+descriptions/
+prelab3_FF78_G17.s
+prelab3_FFXX_GXX.s
+src/prelab3_FF78_G17.s
+src/prelab3_FFXX_GXX.s
+prelab3_FF78_G17.pdf
+prelab3_FF78_G17.tex
+report/prelab3_FF78_G17.pdf
+report/prelab3_FF78_G17.tex
