@@ -2,11 +2,11 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![ISA: x86-64 | RISC-V](https://img.shields.io/badge/ISA-x86--64%20%7C%20RISC--V%20(RV32I)-red)](#lab-modules-overview)
-[![RTL: CORE-V Wally | Verilator](https://img.shields.io/badge/RTL-CORE--V%20Wally%20%7C%20Verilator-green)](#5-risc-v-pipeline--hazard-analysis-05-riscv-pipeline-hazard-analysis)
+[![Simulation: Spike | Verilator](https://img.shields.io/badge/Simulation-Spike%20%7C%20Verilator-green)](#lab-modules-overview)
 [![Language: C11](https://img.shields.io/badge/Language-C11-00599C?logo=c&logoColor=white)](#3-unix-command-interpreter-03-unix-command-interpreter)
 [![Platform: Linux Syscalls](https://img.shields.io/badge/Platform-Linux%20Kernel%20Syscalls-FCC624?logo=linux&logoColor=black)](#1-zero-libc-x86-64-cpu-scheduler-01-x86-64-cpu-scheduler)
 
-A laboratory of low-level systems programming implementations, bare-metal hardware simulators, compiler optimization benchmarks, and cycle-accurate RTL pipeline analyses across **x86-64**, **ARM64**, and **RISC-V (RV32I)** architectures. Focuses on zero-dependency `libc` bypasses, raw Linux kernel syscalls, custom linker scripts, recursive descent command interpreters, and hardware datapath verification.
+A laboratory of low-level systems programming implementations, bare-metal simulators, compiler optimization benchmarks, and processor pipeline analyses across **x86-64**, **ARM64**, and **RISC-V (RV32I)** architectures. Focuses on zero-dependency `libc` bypasses, raw Linux kernel syscalls, custom linker scripts, recursive descent command interpreters, and 5-stage pipeline hazard resolution.
 
 ---
 
@@ -18,7 +18,7 @@ A laboratory of low-level systems programming implementations, bare-metal hardwa
 | **[02. Bare-Metal RISC-V Navigator](./02-bare-metal-riscv-simulator)** | RISC-V Assembly (RV32I) | Spike ISA Simulator (Bare-Metal) | Custom Linker Script (`.ld`), HTIF Driver, ABI Stack Framing |
 | **[03. Unix Command Interpreter](./03-unix-command-interpreter)** | C11, POSIX Shell | Linux / Unix | Recursive Descent Parser, Grammar Backtracking, State Execution |
 | **[04. CoreMark Performance Profiling](./04-coremark-performance-profiling)** | C11, Clang/LLVM, GCC | Apple Silicon (M2 ARM64) & RISC-V | Compiler Flags (`-O0` to `-Ofast`), ISA Extensions (M, C, GC), ILP |
-| **[05. RISC-V Pipeline & Hazard Analysis](./05-riscv-pipeline-hazard-analysis)** | RISC-V Assembly (RV32I), SystemVerilog RTL | CORE-V Wally (Verilator & GTKWave) | 5-Stage Pipeline (`F`–`W`), RAW Forwarding (`W -> E`), Load-Use Stall (`StallF`/`StallD`), Branch Flush |
+| **[05. RISC-V Pipeline & Hazard Analysis](./05-riscv-pipeline-hazard-analysis)** | RISC-V Assembly (RV32I), SystemVerilog | Verilator & GTKWave | 5-Stage Pipeline, Data Forwarding, Load-Use Stalls, Branch Flushing |
 
 ---
 
@@ -54,10 +54,10 @@ A laboratory of low-level systems programming implementations, bare-metal hardwa
 - **ISA Extension Benchmarking:** Comparative analysis of hardware vs. software multiply/divide and code density across RISC-V extensions (RV32I, RV32IM, RV32IMC, RV32GC, RV64I), automated via Python test harnesses.
 
 ### 5. RISC-V Pipeline & Hazard Analysis (`05-riscv-pipeline-hazard-analysis`)
-- **Philosophy:** Cycle-accurate RTL waveform verification of the 5-stage pipelined **CORE-V Wally (`rv32i`)** processor (`F`, `D`, `E`, `M`, `W`) using **Verilator** VCD traces and **GTKWave**.
-- **Control Hazard Resolution:** Traces static predict-not-taken branch evaluation in Execute (`PCSrcE = 1`) and two-stage wrong-path squashing via synchronous `FlushD` and `FlushE` assertions.
-- **Data Forwarding Network:** Verifies zero-stall read-after-write (RAW) hazard resolution via `W -> E` bypass multiplexers (`ForwardAE = 2'b01`, `ForwardBE = 2'b01`) routing `ResultW` directly to the ALU.
-- **Load-Use Interlock Engineering:** Custom bare-metal RV32I testbench (`lw` immediately followed by dependent `add`) triggering hardware hazard unit assertions (`StallF = 1`, `StallD = 1`, `FlushE = 1`) to freeze front-end registers and inject a single-cycle `nop` bubble before completing `W -> E` forwarding.
+- **Philosophy:** Cycle-by-cycle waveform analysis of a 5-stage pipelined RISC-V (`rv32i`) processor (Fetch, Decode, Execute, Memory, Writeback) using **Verilator** and **GTKWave**.
+- **Control Hazards:** Traces static predict-not-taken branch evaluation in the Execute stage and two-cycle pipeline flushing of wrong-path instructions when a branch is taken.
+- **Data Forwarding:** Verifies zero-stall read-after-write (RAW) hazard resolution by forwarding results from the Writeback stage directly back to the ALU inputs.
+- **Load-Use Stalls:** Custom bare-metal RV32I assembly testbench (`lw` immediately followed by a dependent `add`) demonstrating a single-cycle pipeline stall and bubble insertion before forwarding the loaded word.
 
 ---
 

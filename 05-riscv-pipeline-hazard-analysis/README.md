@@ -1,11 +1,11 @@
-# CORE-V Wally Pipelined Datapath & Hazard Verification (RV32I)
+# RISC-V 5-Stage Pipeline & Hazard Analysis (RV32I)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Architecture: RISC-V](https://img.shields.io/badge/Architecture-RISC--V%20RV32I-orange.svg)](#pipeline-architecture--memory-layout)
-[![RTL Simulator: Verilator](https://img.shields.io/badge/RTL%20Simulator-CORE--V%20Wally%20%7C%20Verilator-green.svg)](#waveform-analysis--microarchitectural-verification)
+[![Simulator: Verilator & GTKWave](https://img.shields.io/badge/Simulator-Verilator%20%7C%20GTKWave-green.svg)](#waveform-analysis)
 [![Course: CMPE 344](https://img.shields.io/badge/Course-CMPE%20344%20Boğaziçi-purple.svg)](#overview)
 
-Cycle-accurate RTL waveform verification and microarchitectural hazard analysis of the 5-stage pipelined **CORE-V Wally (`rv32i`)** processor using **Verilator** and **GTKWave**. Built as part of the **CMPE 344 (Computer Organization)** curriculum at **Boğaziçi University**.
+Cycle-by-cycle waveform analysis of a 5-stage pipelined **RISC-V (`rv32i`)** processor (**CORE-V Wally**) using **Verilator** and **GTKWave**. Developed as part of the **CMPE 344 (Computer Organization)** curriculum at **Boğaziçi University**.
 
 ---
 
@@ -13,12 +13,12 @@ Cycle-accurate RTL waveform verification and microarchitectural hazard analysis 
 - [Overview](#overview)
 - [Key Objectives](#key-objectives)
 - [Pipeline Architecture & Memory Layout](#pipeline-architecture--memory-layout)
-- [Waveform Analysis & Microarchitectural Verification](#waveform-analysis--microarchitectural-verification)
+- [Waveform Analysis](#waveform-analysis)
   - [Part I: 5-Stage Pipeline Progression (`add t2, t0, t1`)](#part-i-5-stage-pipeline-progression-add-t2-t0-t1)
-  - [Part II: Control Hazard & Branch Recovery (`blt t3, t4, L1`)](#part-ii-control-hazard--branch-recovery-blt-t3-t4-l1)
-  - [Part III: Non-Stalling RAW Data Hazard (`W -> E` Forwarding)](#part-iii-non-stalling-raw-data-hazard-w---e-forwarding)
-  - [Part IV: Load-Use Data Hazard (`StallF`, `StallD` & Bubble Injection)](#part-iv-load-use-data-hazard-stallf-stalld--bubble-injection)
-- [Forwarding & Hazard Control Logic Summary](#forwarding--hazard-control-logic-summary)
+  - [Part II: Control Hazard & Branch Flush (`blt t3, t4, L1`)](#part-ii-control-hazard--branch-flush-blt-t3-t4-l1)
+  - [Part III: Data Hazard & Forwarding (`W -> E` Bypass)](#part-iii-data-hazard--forwarding-w---e-bypass)
+  - [Part IV: Load-Use Hazard & Pipeline Stall](#part-iv-load-use-hazard--pipeline-stall)
+- [Forwarding & Hazard Logic Summary](#forwarding--hazard-logic-summary)
 - [Project Structure](#project-structure)
 - [Prerequisites & Usage](#prerequisites--usage)
 - [Full Technical Report](#full-technical-report)
@@ -29,33 +29,33 @@ Cycle-accurate RTL waveform verification and microarchitectural hazard analysis 
 
 ## Overview
 
-Modern pipelined RISC-V processors overlap instruction execution across five synchronous stages: **Instruction Fetch (`F`)**, **Decode (`D`)**, **Execute (`E`)**, **Memory (`M`)**, and **Writeback (`W`)**. While pipelining improves instruction throughput, it introduces **control hazards** on taken branches and **read-after-write (RAW) data hazards** between dependent instructions.
+Pipelined RISC-V processors overlap instruction execution across five stages: **Fetch (`F`)**, **Decode (`D`)**, **Execute (`E`)**, **Memory (`M`)**, and **Writeback (`W`)**. While pipelining increases instruction throughput, it introduces **control hazards** on taken branches and **read-after-write (RAW) data hazards** between dependent instructions.
 
-This module inspects the cycle-by-cycle RTL behavior of the open-source **CORE-V Wally** core (`rv32i` configuration) compiled into a cycle-accurate **Verilator** binary (`testbench.vcd`). Through bare-metal RISC-V assembly testbenches and GTKWave signal tracing, we verify normal pipeline propagation, static branch-not-taken flushing, `W -> E` register bypass networks, and single-cycle load-use interlocks.
+This module inspects the cycle-by-cycle behavior of the **CORE-V Wally** (`rv32i`) processor simulated with **Verilator** (`testbench.vcd`). Using bare-metal RISC-V assembly testbenches and **GTKWave** signal traces, it examines normal pipeline progression, static branch-not-taken flushing, `W -> E` data forwarding, and single-cycle load-use stalls.
 
 ---
 
 ## Key Objectives
 
-1. **5-Stage Datapath Tracking**: Trace instructions across `PCF`, `PCD`, `PCE`, `PCM`, and `PCW` along with stage-pipelined control signals (`RegWrite`, `ResultSrc`, `MemWrite`, `ALUControlE`, `ALUSrcAE/BE`).
-2. **Control Hazard Verification**: Analyze static branch-not-taken recovery in Execute (`PCSrcE = 1`) and synchronous flushing of wrong-path instructions (`FlushD = 1`, `FlushE = 1`).
-3. **Zero-Stall RAW Bypass Analysis**: Verify `W -> E` data forwarding (`ForwardAE = 2'b01`, `ForwardBE = 2'b01`) when a load and dependent ALU operation are separated by a single instruction (`nop`).
-4. **Load-Use Interlock Engineering**: Construct a bare-metal RV32I assembly testbench triggering a true load-use hazard (`lw x7, 4(x5)` immediately followed by `add x9, x7, x7`), capturing front-end stalling (`StallF = 1`, `StallD = 1`) and `E`-stage bubble injection (`FlushE = 1`).
+1. **5-Stage Pipeline Tracking**: Trace instruction progression across `PCF`, `PCD`, `PCE`, `PCM`, and `PCW` along with stage-pipelined control signals (`RegWrite`, `ResultSrc`, `MemWrite`, `ALUControlE`, `ALUSrcAE/BE`).
+2. **Control Hazard Resolution**: Analyze static predict-not-taken branch handling in Execute (`PCSrcE = 1`) and the two-cycle flush of wrong-path instructions (`FlushD = 1`, `FlushE = 1`).
+3. **Data Forwarding (`W -> E`)**: Verify zero-stall RAW hazard resolution (`ForwardAE = 2'b01`, `ForwardBE = 2'b01`) when a load and a dependent ALU instruction are separated by one instruction (`nop`).
+4. **Load-Use Hazard & Pipeline Stall**: Write a bare-metal RV32I assembly testbench triggering a load-use hazard (`lw x7, 4(x5)` immediately followed by `add x9, x7, x7`), demonstrating front-end stalling (`StallF = 1`, `StallD = 1`) and `E`-stage bubble insertion (`FlushE = 1`).
 
 ---
 
 ## Pipeline Architecture & Memory Layout
 
-The bare-metal testbenches are linked via `linker.ld` against CORE-V Wally's uncached physical memory map (`10 ps` clock period: rising edge at `4 ps`, falling edge at `9 ps` of each cycle):
+The bare-metal testbenches are linked via `linker.ld` against the processor's physical memory map (`10 ps` clock period: rising edge at `4 ps`, falling edge at `9 ps` of each cycle):
 
-| Region | Base Address | Section Types | Microarchitectural Purpose |
+| Region | Base Address | Section Types | Purpose |
 | :--- | :--- | :--- | :--- |
-| **ROM / Text** | `0x80000000` | `.text.init`, `.text`, `.htif` | Reset entry vector (`_start`), instruction stream, Host-Target Interface (`tohost`/`fromhost`) |
+| **ROM / Text** | `0x80000000` | `.text.init`, `.text`, `.htif` | Reset entry (`_start`), instruction stream, Host-Target Interface (`tohost`/`fromhost`) |
 | **RAM / Data** | `0x80010000` | `.data`, `.sdata`, `.bss` | Word-aligned test array `arr: .word 1111, 2222, 3333, 4444, 5555, 6666` (`0x00000457`, `0x000008AE`, ...) |
 
 ---
 
-## Waveform Analysis & Microarchitectural Verification
+## Waveform Analysis
 
 ### Part I: 5-Stage Pipeline Progression (`add t2, t0, t1`)
 
@@ -75,7 +75,7 @@ In `fibonacci.s`, the R-type instruction `add t2, t0, t1` (`0x006283B3` at `PC =
 
 ---
 
-### Part II: Control Hazard & Branch Recovery (`blt t3, t4, L1`)
+### Part II: Control Hazard & Branch Flush (`blt t3, t4, L1`)
 
 CORE-V Wally employs a static **predict-not-taken** policy in `rv32i`. When `blt t3, t4, L1` (`0xFE6E4AE3` at `PC = 0x80000030`) evaluates as taken in Execute (`t3 < t4`), two sequential instructions (`0x80000034` and `0x80000038`) have already entered `D` and `F`:
 
@@ -88,7 +88,7 @@ CORE-V Wally employs a static **predict-not-taken** policy in `rv32i`. When `blt
 
 ---
 
-### Part III: Non-Stalling RAW Data Hazard (`W -> E` Forwarding)
+### Part III: Data Hazard & Forwarding (`W -> E` Bypass)
 
 In the initial sequence (`lw x6, 0(x5)` -> `nop` -> `add x8, x6, x6`), the intervening `nop` separates the load (`0x80000014`) and dependent addition (`0x8000001C`) by one stage:
 
@@ -101,15 +101,15 @@ In the initial sequence (`lw x6, 0(x5)` -> `nop` -> `add x8, x6, x6`), the inter
 
 ---
 
-### Part IV: Load-Use Data Hazard (`StallF`, `StallD` & Bubble Injection)
+### Part IV: Load-Use Hazard & Pipeline Stall
 
-In `src/hazard_analysis.s`, placing `lw x7, 4(x5)` (`0x0042A383` at `0x80000020`) immediately before `add x9, x7, x7` (`0x007384B3` at `0x80000024`) creates a true **load-use hazard**:
+In `src/hazard_analysis.s`, placing `lw x7, 4(x5)` (`0x0042A383` at `0x80000020`) immediately before `add x9, x7, x7` (`0x007384B3` at `0x80000024`) creates a **load-use hazard**:
 
 | Cycle Window | `lw x7, 4(x5)` (`0x80000020`) | `add x9, x7, x7` (`0x80000024`) | Hazard & Forwarding Control Signals |
 | :--- | :--- | :--- | :--- |
-| **`320–330 ps` (`324 ps`)** | **Execute (`E`)**: `ResultSrcE[0] = 1`, `RdE = 0x07` | **Decode (`D`)**: `Rs1D = 0x07`, `Rs2D = 0x07` | **`StallF = 1`, `StallD = 1`, `FlushE = 1`** (Front-end frozen, bubble injected into `E`) |
-| **`330–340 ps`** | **Memory (`M`)**: `ReadDataM` fetched from data cache | **Decode (`D`)** *(held for 2nd cycle)* | `PCE = 0x00000000` (`InstrE = 0x00000013` bubble), `StallF = 0`, `StallD = 0`, `FlushE = 0` |
-| **`340–350 ps`** | **Writeback (`W`)**: `ResultW = 0x000008AE` (`2222`) | **Execute (`E`)**: `Rs1E = 0x07`, `Rs2E = 0x07` | **`ForwardAE = 2'b01`, `ForwardBE = 2'b01`** (`ResultW` bypassed -> `IEUResultE = 0x0000115C = 4444`) |
+| **`320–330 ps` (`324 ps`)** | **Execute (`E`)**: `ResultSrcE[0] = 1`, `RdE = 0x07` | **Decode (`D`)**: `Rs1D = 0x07`, `Rs2D = 0x07` | **`StallF = 1`, `StallD = 1`, `FlushE = 1`** (Front-end stalled, bubble inserted into `E`) |
+| **`330–340 ps`** | **Memory (`M`)**: `ReadDataM` fetched from data memory | **Decode (`D`)** *(held for 2nd cycle)* | `PCE = 0x00000000` (`InstrE = 0x00000013` bubble), `StallF = 0`, `StallD = 0`, `FlushE = 0` |
+| **`340–350 ps`** | **Writeback (`W`)**: `ResultW = 0x000008AE` (`2222`) | **Execute (`E`)**: `Rs1E = 0x07`, `Rs2E = 0x07` | **`ForwardAE = 2'b01`, `ForwardBE = 2'b01`** (`ResultW` forwarded -> `IEUResultE = 0x0000115C = 4444`) |
 
 <p align="center">
   <img src="assets/part4_wave.png" alt="Part IV: Load-use hazard stall and FlushE bubble injection at 324 ps" width="100%">
@@ -117,7 +117,7 @@ In `src/hazard_analysis.s`, placing `lw x7, 4(x5)` (`0x0042A383` at `0x80000020`
 
 ---
 
-## Forwarding & Hazard Control Logic Summary
+## Forwarding & Hazard Logic Summary
 
 | Mechanism | Trigger Condition in CORE-V Wally | Hardware Action | Penalty |
 | :--- | :--- | :--- | :--- |
