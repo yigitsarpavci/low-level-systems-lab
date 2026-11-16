@@ -1,0 +1,317 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{charter}
+\usepackage[scaled=0.90]{inconsolata}
+\usepackage{microtype}
+\usepackage[a4paper, hmargin=0.80in, vmargin=0.65in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{caption}
+
+% Eye-friendly line height and paragraph spacing
+\linespread{1.14}
+\setlength{\parskip}{4.8pt plus 1pt minus 1pt}
+\setlength{\parindent}{0pt}
+\emergencystretch=2.2em
+
+\titlespacing*{\section}{0pt}{11pt plus 1.5pt minus 1.5pt}{4.5pt plus 1pt minus 1pt}
+\titlespacing*{\subsection}{0pt}{7pt plus 1pt minus 1pt}{3pt plus 1pt minus 1pt}
+
+% Subtle, high-contrast color palette
+\definecolor{primaryblue}{RGB}{22, 56, 112}
+\definecolor{accentblue}{RGB}{36, 113, 163}
+\definecolor{codebg}{RGB}{248, 250, 252}
+\definecolor{codeframe}{RGB}{212, 220, 230}
+\definecolor{codecomment}{RGB}{88, 104, 120}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primaryblue,
+    citecolor=primaryblue,
+    urlcolor=accentblue
+}
+
+\captionsetup{font=small, labelfont=bf, skip=6pt}
+
+\lstdefinestyle{verilogstyle}{
+    basicstyle=\ttfamily\footnotesize,
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{codeframe},
+    framesep=5pt,
+    xleftmargin=4pt,
+    xrightmargin=4pt,
+    aboveskip=6pt,
+    belowskip=6pt,
+    breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
+    commentstyle=\color{codecomment}\itshape,
+    showstringspaces=false
+}
+
+% Clean plain page style (no top header, simple page number at bottom)
+\pagestyle{plain}
+
+\begin{document}
+
+% =========================================================================
+% TITLE BLOCK
+% =========================================================================
+
+\begin{center}
+    {\Large \textbf{\textcolor{primaryblue}{BO\u{G}AZ\.{I}\c{C}\.{I} UNIVERSITY}}}\\[0.25em]
+    {\normalsize \textbf{Department of Computer Engineering}}\\[0.32em]
+    {\large \textbf{CMPE 344: Computer Organization -- Prelab 4 Report}}\\[0.45em]
+    \rule{\textwidth}{0.8pt}\\[0.42em]
+    {\Large \textbf{Cache Configurations and Hierarchy Design on CORE-V Wally}}\\[0.35em]
+    \rule{\textwidth}{0.8pt}\\[0.4em]
+\end{center}
+
+{\renewcommand{\arraystretch}{1.28}
+\noindent\begin{tabular}{@{}l l@{}}
+    \textbf{Author:} & Yi\u{g}it Sarp Avc\i{} \\
+    \textbf{Architecture:} & CORE-V Wally (\texttt{rv32gc}) \\
+\end{tabular}}
+\vspace{3pt}
+
+% =========================================================================
+% SECTION 1: DEFAULT PARAMETERS (ONLY TABLE)
+% =========================================================================
+
+\section{Default Parameters}
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.34}
+\begin{tabularx}{\textwidth}{@{}c l l l >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Line} & \textbf{Parameter} & \textbf{RTL Value} & \textbf{Default Value} & \textbf{Description} \\
+\midrule
+125 & \texttt{DCACHE\_NUMWAYS} & \texttt{32'd4} & 4 ways & Sets the associativity of the D\$ cache. \\
+126 & \texttt{DCACHE\_WAYSIZEINBYTES} & \texttt{32'd4096} & 4096 B (4 KB) & Capacity of one way in the D\$ cache. \\
+127 & \texttt{DCACHE\_LINELENINBITS} & \texttt{32'd512} & 512 bits (64 B) & Cache line size for the D\$ cache. \\
+128 & \texttt{ICACHE\_NUMWAYS} & \texttt{32'd4} & 4 ways & Sets the associativity of the I\$ cache. \\
+129 & \texttt{ICACHE\_WAYSIZEINBYTES} & \texttt{32'd4096} & 4096 B (4 KB) & Capacity of one way in the I\$ cache. \\
+130 & \texttt{ICACHE\_LINELENINBITS} & \texttt{32'd512} & 512 bits (64 B) & Cache line size for the I\$ cache. \\
+131 & \texttt{CACHE\_SRAMLEN} & \texttt{32'd128} & 128 & Number of rows in the SRAMs that store the cache data. \\
+\bottomrule
+\end{tabularx}
+\caption{Default 32-bit cache configuration parameters in \texttt{/opt/openhwgroup/cvw/config/rv32gc/config.vh} (lines 125--131 inclusive).}
+\label{tab:default_params}
+\end{table}
+
+% =========================================================================
+% SECTION 2: QUESTION 1
+% =========================================================================
+
+\section{Question 1: Size of the I\$ Cache and the D\$ Cache}
+
+The Wally processor follows the Harvard architecture~\cite{wiki_harvard}, introducing two separate L1 caches: the Instruction Cache (I\$) accessed by the Instruction Fetch Unit (\texttt{IFU}) and the Data Cache (D\$) accessed by the Load/Store Unit (\texttt{LSU}). In the default \texttt{rv32gc} configuration, both I\$ and D\$ are 4-way set-associative caches. The total capacity of a set-associative cache is the number of ways multiplied by the capacity of a single way:
+\[
+\text{Cache Size} = \text{Number of Ways} \times \text{Way Size (in Bytes)}
+\]
+
+\textbf{1. Instruction Cache (I\$) Size:}
+From Table~\ref{tab:default_params}, the I\$ has $\texttt{ICACHE\_NUMWAYS} = 4$ ways, and each way has a capacity of $\texttt{ICACHE\_WAYSIZEINBYTES} = 4096\text{ bytes}$ ($4\text{ KB}$, where $1\text{ KB} = 1024\text{ bytes}$):
+\begin{align*}
+\text{I\$ Size (in Bytes)} &= \texttt{ICACHE\_NUMWAYS} \times \texttt{ICACHE\_WAYSIZEINBYTES} = 4 \times 4096\text{ bytes} = \mathbf{16{,}384\text{ bytes}} \\
+\text{I\$ Size (in KB)} &= \frac{16{,}384\text{ bytes}}{1024\text{ bytes/KB}} = \mathbf{16\text{ KB}} \quad (16{,}384 \times 8 = 131{,}072\text{ bits})
+\end{align*}
+Since each I\$ cache line is $\texttt{ICACHE\_LINELENINBITS} = 512\text{ bits} = 64\text{ bytes}$, each way contains $\text{NUMSETS} = \frac{4096\text{ bytes}}{64\text{ bytes/line}} = 64\text{ sets}$, giving $64\text{ sets} \times 4\text{ ways} = 256\text{ cache lines}$ in total ($256 \times 64\text{ bytes} = 16\text{ KB}$).
+
+\textbf{2. Data Cache (D\$) Size:}
+Similarly, the D\$ has $\texttt{DCACHE\_NUMWAYS} = 4$ ways, and each way has a capacity of $\texttt{DCACHE\_WAYSIZEINBYTES} = 4096\text{ bytes}$ ($4\text{ KB}$):
+\begin{align*}
+\text{D\$ Size (in Bytes)} &= \texttt{DCACHE\_NUMWAYS} \times \texttt{DCACHE\_WAYSIZEINBYTES} = 4 \times 4096\text{ bytes} = \mathbf{16{,}384\text{ bytes}} \\
+\text{D\$ Size (in KB)} &= \frac{16{,}384\text{ bytes}}{1024\text{ bytes/KB}} = \mathbf{16\text{ KB}} \quad (16{,}384 \times 8 = 131{,}072\text{ bits})
+\end{align*}
+Each D\$ way also contains $\frac{4096\text{ bytes}}{64\text{ bytes/line}} = 64\text{ sets}$ ($256$ cache lines across $4$ ways). Therefore, \textbf{both the I\$ and the D\$ have a size of $16\text{ KB}$ ($16{,}384\text{ bytes}$) each}.
+
+% =========================================================================
+% SECTION 3: QUESTION 2
+% =========================================================================
+
+\section{Question 2: Number of Instructions Updated into the I\$ at Once}
+
+Data is retrieved from main memory into the cache in fixed-size blocks called cache lines. When an instruction fetch misses in the I\$, one full cache line of size $\texttt{ICACHE\_LINELENINBITS}$ is updated into the I\$ at once:
+\[
+\texttt{ICACHE\_LINELENINBITS} = 512\text{ bits} = \frac{512\text{ bits}}{8\text{ bits/byte}} = 64\text{ bytes per cache line}
+\]
+
+\begin{itemize}[leftmargin=1.4em, itemsep=3.5pt, topsep=2pt]
+    \item \textbf{Standard 32-Bit RISC-V Instructions:} Standard uncompressed RISC-V instructions are $32\text{ bits}$ ($4\text{ bytes}$) long (\texttt{WORDLEN = 32} in \texttt{src/ifu/ifu.sv}). Dividing the cache line size by the size of one instruction gives:
+    \[
+    \text{Instructions Updated at Once} = \frac{\texttt{ICACHE\_LINELENINBITS}}{\text{Instruction Size}} = \frac{512\text{ bits}}{32\text{ bits}} = \frac{64\text{ bytes}}{4\text{ bytes}} = \mathbf{16\text{ instructions}}
+    \]
+    \item \textbf{Compressed Instructions (\texttt{C} Extension in \texttt{rv32gc}):} Because \texttt{rv32gc} also enables the Compressed extension (\texttt{ZCA\_SUPPORTED = 1}, where compressed instructions are $16\text{ bits} = 2\text{ bytes}$ long and \texttt{MUXINTERVAL = 16} in \texttt{src/ifu/ifu.sv}), a 512-bit cache line can hold up to $512 / 16 = \mathbf{32}\text{ \textbf{compressed (16-bit) instructions}}$ (or between $16$ and $32$ instructions when 32-bit and 16-bit instructions are mixed).
+\end{itemize}
+Therefore, \textbf{16 standard 32-bit instructions} (or up to 32 compressed 16-bit instructions) are updated into the I\$ at once.
+
+% =========================================================================
+% SECTION 4: QUESTION 3
+% =========================================================================
+
+\section{Question 3: Number of 32-Bit Words Brought into the D\$ on a Single Cache Fill}
+
+On a D\$ miss, a single cache fill brings one complete D\$ cache line of length $\texttt{DCACHE\_LINELENINBITS}$ from main memory into the D\$:
+\[
+\texttt{DCACHE\_LINELENINBITS} = 512\text{ bits} = \frac{512\text{ bits}}{8\text{ bits/byte}} = 64\text{ bytes per cache line}
+\]
+Given that one data word is $32\text{ bits}$ ($4\text{ bytes}$), the number of 32-bit words brought into the D\$ on a single cache fill is:
+\[
+\text{Number of 32-bit Words} = \frac{\texttt{DCACHE\_LINELENINBITS}}{\text{Word Size}} = \frac{512\text{ bits}}{32\text{ bits/word}} = \frac{64\text{ bytes}}{4\text{ bytes/word}} = \mathbf{16\text{ words}}
+\]
+In the \texttt{rv32gc} configuration (\texttt{XLEN = 32}, \texttt{AHBW = 32}), the bus interface (\texttt{ahbcacheinterface.sv}) performs a 16-beat AHB burst (\texttt{BEATSPERLINE = 512 / 32 = 16}) to collect 16 consecutive 32-bit words into the 512-bit \texttt{FetchBuffer} before writing all \textbf{16 words} into the D\$ cache line.
+
+% =========================================================================
+% SECTION 5: QUESTION 4
+% =========================================================================
+
+\section{Question 4: When Does a Cache Miss and a Cache Hit Occur?}
+
+When the processor issues a memory request (an instruction fetch in the \texttt{IFU} or a data load/store in the \texttt{LSU}), the physical address is divided into three fields to look up the set-associative cache (Patterson \& Hennessy~\cite{patterson2020}, Section~5.3, pp.~383--398; Harris \& Harris~\cite{harris2021}, Section~8.3, pp.~480--496):
+\begin{enumerate}[leftmargin=1.5em, itemsep=2.5pt, topsep=2pt]
+    \item \textbf{Offset} ($\log_2(64) = 6\text{ bits}$, bits \texttt{[5:0]}): Selects the target byte or word within the 64-byte cache line.
+    \item \textbf{Set Index} ($\log_2(64) = 6\text{ bits}$, bits \texttt{[11:6]}): Selects one of the $64$ cache sets.
+    \item \textbf{Tag} ($\text{PA\_BITS} - 12 = 22\text{ bits}$, bits \texttt{[33:12]}): Identifies which memory block is currently stored in a cache line of that set.
+\end{enumerate}
+The \textbf{Set Index} addresses all $4$ ways of the selected set in parallel to read each way's \textbf{Valid bit (\texttt{ValidWay})} and stored \textbf{Tag (\texttt{ReadTag})}~\cite{patterson2020,harris2021}:
+
+\begin{itemize}[leftmargin=1.4em, itemsep=3.5pt, topsep=2pt]
+    \item \textbf{When a Cache Hit Occurs:} A \textbf{cache hit} occurs when the requested memory block is already present and valid in one of the ways of the indexed set~\cite{patterson2020,harris2021}. Specifically, for at least one way $w \in \{0, 1, 2, 3\}$ in the selected set, \textbf{both} of the following conditions hold simultaneously:
+    \[
+    \texttt{ValidWay}[w] == 1 \quad \land \quad \texttt{ReadTag}[w] == \texttt{PAdr}[\text{Tag}]
+    \]
+    In Wally (\texttt{src/cache/cacheway.sv}, line~116; \texttt{src/cache/cache.sv}, line~134), each way evaluates \texttt{HitWay = ValidWay \& (ReadTag == PAdr[33:12]) \& \textasciitilde InvalidateCacheDelay} and the cache asserts \texttt{Hit = |HitWay}. On a hit, the request completes in a single clock cycle in \texttt{STATE\_ACCESS} without stalling the pipeline (\texttt{CacheStall = 0}), returning the requested word on a read or updating the data array and pseudo-LRU state on a write~\cite{harris2021,wallydoc}.
+
+    \item \textbf{When a Cache Miss Occurs:} A \textbf{cache miss} occurs when \textbf{none} of the ways in the indexed set contains a valid matching block ($\texttt{Hit} == 0$ on an active memory access)~\cite{patterson2020,harris2021}. This occurs in two situations:
+    \begin{enumerate}[leftmargin=1.4em, itemsep=2pt, topsep=1.5pt]
+        \item \textbf{Invalid Entry ($\texttt{ValidWay}[w] == 0$):} The way has not been loaded with data since reset or was invalidated, causing a \emph{compulsory (cold-start) miss}~\cite{patterson2020,harris2021}.
+        \item \textbf{Tag Mismatch ($\texttt{ValidWay}[w] == 1 \land \texttt{ReadTag}[w] \neq \texttt{PAdr}[\text{Tag}]$ in all ways):} All valid ways in the indexed set hold other memory blocks that map to the same set index, causing a \emph{conflict (collision) miss} or \emph{capacity miss}~\cite{patterson2020,harris2021}.
+    \end{enumerate}
+    On a miss, the cache controller asserts \texttt{CacheStall = 1} to stall the pipeline, selects a replacement victim way via pseudo-LRU (\texttt{cacheLRU}), writes the victim line back to memory if it is dirty (\texttt{STATE\_WRITEBACK}), fetches the missing 64-byte block from main memory (\texttt{STATE\_FETCH}), writes it into the cache way (\texttt{STATE\_WRITE\_LINE}) with $\texttt{Valid} = 1$, and resumes execution~\cite{harris2021,wallydoc}.
+\end{itemize}
+
+% =========================================================================
+% SECTION 6: QUESTION 5
+% =========================================================================
+
+\section{Question 5: Write-Back Strategy vs. Write-Through Strategy}
+
+When the processor executes store instructions (\texttt{sw}, \texttt{sh}, \texttt{sb}) or atomic operations, the cache must follow a write policy to maintain consistency between the Data Cache (D\$) and main memory (Patterson \& Hennessy~\cite{patterson2020}, Section~5.3 ``Handling Writes'', pp.~401--404; Harris \& Harris~\cite{harris2021}, Section~8.3.4 ``Writing Data to the Cache'', pp.~497--499).
+
+\textbf{1. Wally's Write-Back Strategy:}
+Under the \textbf{write-back} (or \emph{copy-back}) policy used in Wally's D\$, when a store hits in the cache, the new data is written \textbf{only to the L1 D\$ block} and is \emph{not} immediately written to main memory~\cite{patterson2020,harris2021}. Because the modified cache block now holds newer data than main memory, each cache line in \texttt{src/cache/cacheway.sv} maintains a \textbf{Dirty bit (\texttt{DirtyBits})}, which is set to $1$ (\texttt{SetDirty = 1}) whenever the block is written~\cite{patterson2020,harris2021}. The modified block is written back to main memory \textbf{only when that dirty line ($\texttt{Dirty} == 1$) is evicted} on a later cache miss (entering \texttt{STATE\_WRITEBACK} before \texttt{STATE\_FETCH} in \texttt{cachefsm.sv}) or when an explicit cache flush/clean operation (\texttt{FlushCache}, \texttt{cbo.flush}, or \texttt{cbo.clean}) is executed~\cite{harris2021,wallydoc}. On a store \emph{miss}, Wally pairs write-back with \textbf{write-allocate} (\emph{fetch-on-write})~\cite{patterson2020,harris2021}: it writes back any dirty victim line, fetches the missing 64-byte block into \texttt{FetchBuffer}, merges the store bytes via \texttt{WriteDataMux} (\texttt{cache.sv}, lines~181--185), writes the merged line into the D\$, and sets $\texttt{Valid} = 1$ and $\texttt{Dirty} = 1$.
+
+\textbf{2. How Write-Back Differs from Write-Through:}
+In a \textbf{write-through} cache, every store updates \textbf{both} the cache block and main memory (or the next cache level) immediately on every write~\cite{patterson2020,harris2021}. Table~\ref{tab:wb_vs_wt} summarizes the differences:
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.28}
+\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Aspect} & \textbf{Write-Back (Wally D\$)} & \textbf{Write-Through} \\
+\midrule
+\textbf{Store Hit Action} & Updates only the D\$ SRAM array and sets $\texttt{Dirty} = 1$ in 1 cycle; main memory is not accessed. & Updates both the D\$ and main memory on every store instruction~\cite{patterson2020,harris2021}. \\
+\textbf{Dirty Bit} & Requires 1 \texttt{Dirty} bit per cache line (\texttt{DirtyBits} in \texttt{cacheway.sv}) to track modified lines. & No \texttt{Dirty} bit needed, because main memory always holds an up-to-date copy of every block~\cite{patterson2020}. \\
+\textbf{Eviction on Miss} & If the victim block has $\texttt{Dirty} == 1$, it must be written back to memory (\texttt{STATE\_WRITEBACK}) before fetching the new line. & Victim blocks are never dirty and can be overwritten immediately without a write-back transaction~\cite{harris2021}. \\
+\textbf{Write Speed} & Stores complete at L1 SRAM speed (1 cycle on hit) without waiting for the memory bus. & Stalls the CPU on slow main-memory writes unless a \emph{write buffer} is added~\cite{patterson2020}. \\
+\textbf{Bus Traffic} & Low bus bandwidth: multiple writes to the same block are absorbed in L1 and combined into one burst write-back upon eviction~\cite{patterson2020,harris2021}. & High bus bandwidth: every store generates a write transaction on the external bus~\cite{patterson2020}. \\
+\bottomrule
+\end{tabularx}
+\caption{Comparison between the Write-Back and Write-Through cache strategies~\cite{patterson2020,harris2021}.}
+\label{tab:wb_vs_wt}
+\end{table}
+
+% =========================================================================
+% SECTION 7: BONUS
+% =========================================================================
+
+\section{Bonus: Design Choices for Introducing an Additional L2 Cache into Wally RTL}
+
+In the official CORE-V Wally repository (\url{https://github.com/openhwgroup/cvw})~\cite{wallydoc}, the processor core (\texttt{src/\allowbreak wally/\allowbreak wallypipelinedcore.sv}) implements a Harvard L1 cache structure~\cite{wiki_harvard} with two separate L1 caches: the read-only I\$ inside the Instruction Fetch Unit (\texttt{src/\allowbreak ifu/\allowbreak ifu.sv}) and the write-back D\$ inside the Load/Store Unit (\texttt{src/\allowbreak lsu/\allowbreak lsu.sv}). Both instantiate the parameterized \texttt{cache} module (\texttt{src/\allowbreak cache/\allowbreak cache.sv}) paired with \texttt{ahbcacheinterface} (\texttt{src/\allowbreak ebu/\allowbreak ahbcacheinterface.sv}), and their AHB-Lite streams (\texttt{IFUH*} and \texttt{LSUH*}) are arbitrated by the External Bus Unit (\texttt{src/\allowbreak ebu/\allowbreak ebu.sv} and \texttt{src/\allowbreak ebu/\allowbreak ebufsmarb.sv}) before reaching the SoC \texttt{uncore} (\texttt{src/\allowbreak uncore/\allowbreak uncore.sv} in \texttt{src/\allowbreak wally/\allowbreak wallypipelinedsoc.sv}). Introducing an L2 cache into this RTL involves six key design choices:
+
+\textbf{1. Unified vs.\ Split Topology and Interconnect Placement (\texttt{wallypipelinedcore.sv}, \texttt{ebu.sv}):}
+While L1 uses a split Harvard design~\cite{wiki_harvard} so \texttt{ifu.sv} (Fetch stage) and \texttt{lsu.sv} (Memory stage) can access instructions and data simultaneously without structural hazards, the \textbf{L2 cache should be a Unified Cache} (\texttt{READ\_ONLY\_CACHE = 0}) shared by both I\$ refills and D\$ refills/write-backs to share capacity dynamically~\cite{patterson2020}. In Wally's RTL, there are two placement options around \texttt{ebu.sv} (\texttt{wallypipelinedcore.sv}, lines~258--270):
+\begin{lstlisting}[style=verilogstyle]
+// src/wally/wallypipelinedcore.sv (lines 258-270): EBU arbitrating IFU and LSU AHB buses
+if(P.BUS_SUPPORTED) begin : ebu
+  ebu #(P) ebu(.clk, .reset, .IFUHADDR, .IFUHBURST, .IFUHTRANS, .IFUHREADY, .IFUHSIZE,
+    .LSUHADDR, .LSUHWDATA, .LSUHWSTRB, .LSUHSIZE, .LSUHBURST, .LSUHTRANS, .LSUHWRITE, .LSUHREADY,
+    .HREADY, .HRESP, .HCLK, .HRESETn, .HADDR, .HWDATA, .HWSTRB, .HWRITE, .HSIZE, .HBURST, ...);
+end
+\end{lstlisting}
+\begin{itemize}[leftmargin=1.4em, itemsep=2.5pt, topsep=1.5pt]
+    \item \emph{Choice A (Cache-Bus L2 before \texttt{ahbcacheinterface}):} Replace the two L1 \texttt{ahbcacheinterface} units in \texttt{ifu.sv} (line~268) and \texttt{lsu.sv} (line~343) with an L1-to-L2 arbiter that multiplexes the I\$ and D\$ \texttt{CacheBusAdr}, \texttt{CacheBusRW}, and 512-bit \texttt{FetchBuffer} ports directly into a shared \texttt{cache} instance (\texttt{l2cache}), followed by a single \texttt{ahbcacheinterface} to the AHB bus. This enables single-cycle 512-bit full-line transfers between L1 and L2 instead of serializing 64-byte lines into 16 beats of 32-bit AHB transfers.
+    \item \emph{Choice B (AHB-Bus L2 between \texttt{ebu.sv} and \texttt{uncore.sv}):} Keep \texttt{ifu.sv}, \texttt{lsu.sv}, and \texttt{ebu.sv} unchanged and place an AHB-interfaced L2 cache between \texttt{ebu} (\texttt{wallypipelinedcore.sv}) and \texttt{uncore} (\texttt{wallypipelinedsoc.sv}, line~89). This requires minimal changes to the core, since \texttt{ebufsmarb.sv} already arbitrates \texttt{LSUReq} over \texttt{IFUReq} (\texttt{LSUSelect = (NextState == ARBITRATE)\allowbreak\ ?\ 1'b1 : LSUReq;}), but limits L1--L2 refill bandwidth to \texttt{AHBW} (32) bits per cycle unless the internal bus is widened.
+\end{itemize}
+
+\textbf{2. Parameterization in \texttt{config.vh} and \texttt{parameter-defs.vh} (Capacity, Associativity, Line Size):}
+New parameters (\texttt{L2CACHE\_SUPPORTED}, \texttt{L2CACHE\_NUMWAYS}, \texttt{L2CACHE\_WAYSIZEINBYTES}, and \texttt{L2CACHE\_\allowbreak LINELENINBITS}) must be added to \texttt{config/rv32gc/config.vh} (lines~113--131) and the \texttt{cvw\_t} struct in \texttt{config/\allowbreak shared/\allowbreak parameter-defs.vh}. Because L2 serves both code and data, it should use higher associativity (e.g., $\texttt{L2CACHE\_NUMWAYS} = 8$ or $16$; \texttt{src/\allowbreak cache/\allowbreak cacheLRU.sv} already supports any power-of-two \texttt{NUMWAYS} via its binary tree on lines~63--131) and larger way size (e.g., $16{,}384$ or $32{,}768$ bytes per way for a $128\text{--}256\text{ KB}$ L2, which scales \texttt{DEPTH(NUMSETS)} in \texttt{CacheDataMem} and \texttt{CacheTagMem} inside \texttt{src/\allowbreak cache/\allowbreak cacheway.sv}, lines~108--141). Keeping $\texttt{L2CACHE\_LINELENINBITS} = 512$ bits (matching L1's 64-byte line) simplifies L1 refills; if a wider L2 line (e.g., 1024 bits) is used, \texttt{subcachelineread.sv} can be parameterized with \texttt{WORDLEN = 512} and \texttt{MUXINTERVAL = 512} to select the 512-bit L1 sub-line.
+
+\textbf{3. Physically Indexed, Physically Tagged (PIPT) Addressing vs.\ L1 VIPT (\texttt{cache.sv}):}
+In Wally's L1 caches, \texttt{src/cache/cache.sv} (lines~42, 110--118) uses the 12-bit untranslated virtual address \texttt{NextSet[11:0]} (from \texttt{PCSpillNextF[11:0]} in \texttt{ifu.sv} line~264 and \texttt{IEUAdrExtE[11:0]} in \texttt{lsu.sv} line~334) to index the SRAMs in parallel with TLB lookup (\texttt{immu}/\texttt{dmmu}):
+\begin{lstlisting}[style=verilogstyle]
+// src/cache/cache.sv (lines 110-114): L1 indexes sets using virtual NextSet[SETTOP-1:OFFSETLEN]
+mux3 #(SETLEN) AdrSelMuxData(NextSet[SETTOP-1:OFFSETLEN], PAdr[SETTOP-1:OFFSETLEN], FlushAdr,
+  AdrSelMuxSelData, CacheSetData);
+\end{lstlisting}
+In L1, each way is $4\text{ KB}$ ($\texttt{SETTOP} = \texttt{SETLEN} + \texttt{OFFSETLEN} = 6 + 6 = 12\text{ bits}$), which lies entirely within the 12-bit \texttt{Sv32} page offset and avoids virtual aliasing. In an L2 cache with $>4\text{ KB}$ per way, $\texttt{SETTOP} > 12$, so bits above bit~11 belong to the translated page number. Since the physical address \texttt{PAdr} (\texttt{PCPF} from \texttt{immu} in \texttt{ifu.sv} line~198, or \texttt{PAdrM} from \texttt{dmmu} in \texttt{lsu.sv}) is already resolved before an L1 miss reaches L2, the \textbf{L2 cache must be PIPT}, indexing \texttt{CacheSetData}, \texttt{CacheSetTag}, and \texttt{CacheSetLRU} directly from \texttt{PAdr[SETTOP-1:OFFSETLEN]}.
+
+\textbf{4. Uncacheable / MMIO Bypass and Hardware Page Table Walker (\texttt{ifu.sv}, \texttt{lsu.sv}, \texttt{pmachecker.sv}):}
+In \texttt{ifu.sv} (lines~248--250) and \texttt{lsu.sv} (lines~325--327), the Physical Memory Attribute checker (\texttt{src/\allowbreak mmu/\allowbreak pmachecker.sv}) asserts \texttt{CacheableF} and \texttt{CacheableM} only for main memory (\texttt{UNCORE\_RAM}, \texttt{EXT\_MEM}) and deasserts them for MMIO peripherals (\texttt{CLINT}, \texttt{PLIC}, \texttt{UART}, \texttt{GPIO}, and \texttt{SPI} in \texttt{src/\allowbreak uncore/\allowbreak uncore.sv}) and tightly coupled memories (\texttt{IROM}, \texttt{DTIM}):
+\begin{lstlisting}[style=verilogstyle]
+// src/lsu/lsu.sv (lines 325-327): Separating uncached bus accesses from cacheable requests
+assign BusRW = (~CacheableM & ~SelDTIM) ? LSURWM : '0;
+assign CacheRWM = (CacheableM & ~SelDTIM) ? LSURWM : '0;
+\end{lstlisting}
+Uncached requests (\texttt{BusRW}), uncached atomics (\texttt{BusAtomic}), and uncached \texttt{cbo.zero} (\texttt{BusCMOZero}) \textbf{must bypass L2} so MMIO registers are never cached in L2. Conversely, Hardware Page Table Walker (\texttt{src/mmu/hptw.sv}) reads (selected via \texttt{SelHPTW} in \texttt{lsu.sv} line~336) access page tables in cacheable RAM and should be served by L2 on an L1 D\$ miss.
+
+\textbf{5. Write Policy, Inclusion Policy, and \texttt{fence.i} / CMO Coherence (\texttt{cachefsm.sv}):}
+\begin{itemize}[leftmargin=1.4em, itemsep=2.5pt, topsep=1.5pt]
+    \item \emph{Write Policy:} L2 should use \textbf{write-back with write-allocate} (with \texttt{READ\_ONLY\_CACHE = 0} in \texttt{cache.sv}), using \texttt{DirtyBits} (\texttt{cacheway.sv}, line~61) so dirty L1 D\$ evictions (\texttt{STATE\_\allowbreak WRITEBACK} in \texttt{cachefsm.sv}, line~129) are absorbed in L2 without accessing external memory until L2 evicts a dirty block.
+    \item \emph{Inclusion Policy:} A \textbf{non-inclusive, non-exclusive (NINE)} policy allows reusing \texttt{cache.sv} for L2 without adding back-invalidation ports to \texttt{icache} and \texttt{dcache}. If a \textbf{strictly inclusive} policy is used instead, evicting a line from L2 must probe L1 I\$ and L1 D\$ to assert \texttt{ClearValid} (\texttt{cacheway.sv}, line~94) and force an L1 D\$ write-back if \texttt{HitDirtyWay == 1}.
+    \item \emph{Instruction-Data Coherence (\texttt{fence.i}) and CMOs (\texttt{Zicbom}):} On \texttt{fence.i}, Wally asserts \texttt{FlushDCacheM} (\texttt{lsu.sv}, line~43) and \texttt{InvalidateICacheM} (\texttt{ifu.sv}, line~35). With a unified L2, flushing dirty lines from L1 D\$ into L2 is sufficient for \texttt{icache} refills to read updated instructions from L2 without flushing L2 to DRAM. However, explicit cache management operations (\texttt{CMOpM[3:0]} for \texttt{cbo.inval}, \texttt{cbo.flush}, \texttt{cbo.clean}, and \texttt{cbo.zero} in \texttt{cache.sv} line~41 and \texttt{cachefsm.sv} lines~98--99) must propagate to L2 so DMA or external devices on \texttt{uncore.sv} observe coherent memory.
+\end{itemize}
+
+\textbf{6. Multi-Level Stall Propagation and Performance Counters (\texttt{hazard.sv}, \texttt{privileged.sv}):}
+In \texttt{wallypipelinedcore.sv} (lines~276--285), the Hazard Unit (\texttt{src/\allowbreak hazard/\allowbreak hazard.sv}) stalls the pipeline when \texttt{IFUStallF} (\texttt{ICacheStallF\allowbreak\ |\ BusStall} in \texttt{ifu.sv} line~311) or \texttt{LSUStallM} (\texttt{DCacheStallM\allowbreak\ |\ LSUBusStallM} in \texttt{lsu.sv}) is asserted. With an L2 cache, an L1 miss that hits in L2 asserts \texttt{CacheBusAck} after the L2 hit latency, whereas an L2 miss holds \texttt{CacheBusAck} low while L2's \texttt{cachefsm.sv} completes \texttt{STATE\_\allowbreak WRITEBACK} or \texttt{STATE\_FETCH} over AHB. Finally, just as \texttt{ICacheAccess}, \texttt{ICacheMiss}, \texttt{DCacheAccess}, and \texttt{DCacheMiss} connect to the hardware performance counters in \texttt{csrc.sv} (\texttt{wallypipelinedcore.sv}, line~299), \texttt{L2CacheAccess} and \texttt{L2CacheMiss} outputs from L2's \texttt{cachefsm.sv} (lines~103--104) should be wired to \texttt{csrc.sv}.
+
+% =========================================================================
+% REFERENCES
+% =========================================================================
+
+\vspace{0.2em}
+\begin{thebibliography}{9}
+\small
+\setlength{\itemsep}{3pt}
+
+\bibitem{patterson2020}
+D.~A. Patterson and J.~L. Hennessy, \emph{Computer Organization and Design RISC-V Edition: The Hardware Software Interface}, 2nd~ed., Morgan Kaufmann, 2020, Chapter~5 (``Large and Fast: Exploiting Memory Hierarchy'' --- Sections~5.1, 5.3 ``The Basics of Caches'', and 5.4 ``Measuring and Improving Cache Performance''), pp.~374--435.
+
+\bibitem{harris2021}
+S.~L. Harris and D.~Harris, \emph{Digital Design and Computer Architecture: RISC-V Edition}, Morgan Kaufmann / Elsevier, 2021, Chapter~8 (``Memory Systems'' --- Section~8.3 ``Caches''), pp.~480--507.
+
+\bibitem{wiki_harvard}
+Wikipedia contributors, ``Harvard architecture,'' \emph{Wikipedia, The Free Encyclopedia}, \url{https://en.wikipedia.org/wiki/Harvard_architecture}.
+
+\bibitem{wallydoc}
+D.~Harris, J.~Stine, R.~Thompson, J.~Carlin, \emph{et al.}, \emph{CORE-V Wally Configurable RISC-V Processor Official Repository and Documentation}, OpenHW Group, \url{https://github.com/openhwgroup/cvw}.
+
+\end{thebibliography}
+
+\end{document}

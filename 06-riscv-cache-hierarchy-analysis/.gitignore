@@ -1,0 +1,24 @@
+# LaTeX temporary files
+report/*.aux
+report/*.log
+report/*.out
+report/*.synctex.gz
+report/*.toc
+report/*.fls
+report/*.fdb_latexmk
+
+# macOS & editor files
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+*~
+*.swp
+.vscode/
+
+# Archived local course & submission artifacts
+descriptions/
+prelab4_FF78_G17.pdf
+prelab4_FF78_G17.tex
+report/prelab4_FF78_G17.pdf
+report/prelab4_FF78_G17.tex

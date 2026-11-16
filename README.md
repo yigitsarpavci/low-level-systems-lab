@@ -1,12 +1,12 @@
 # Low-Level Systems & Computer Architecture Lab
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![ISA: x86-64 | RISC-V](https://img.shields.io/badge/ISA-x86--64%20%7C%20RISC--V%20(RV32I)-red)](#lab-modules-overview)
+[![ISA: x86-64 | RISC-V](https://img.shields.io/badge/ISA-x86--64%20%7C%20RISC--V-red)](#lab-modules-overview)
 [![Simulation: Spike | Verilator](https://img.shields.io/badge/Simulation-Spike%20%7C%20Verilator-green)](#lab-modules-overview)
 [![Language: C11](https://img.shields.io/badge/Language-C11-00599C?logo=c&logoColor=white)](#3-unix-command-interpreter-03-unix-command-interpreter)
 [![Platform: Linux Syscalls](https://img.shields.io/badge/Platform-Linux%20Kernel%20Syscalls-FCC624?logo=linux&logoColor=black)](#1-zero-libc-x86-64-cpu-scheduler-01-x86-64-cpu-scheduler)
 
-A laboratory of low-level systems programming implementations, bare-metal simulators, compiler optimization benchmarks, and processor pipeline analyses across **x86-64**, **ARM64**, and **RISC-V (RV32I)** architectures. Focuses on zero-dependency `libc` bypasses, raw Linux kernel syscalls, custom linker scripts, recursive descent command interpreters, and 5-stage pipeline hazard resolution.
+A laboratory of low-level systems programming implementations, bare-metal simulators, compiler optimization benchmarks, processor pipeline analyses, and cache hierarchy evaluations across **x86-64**, **ARM64**, and **RISC-V** architectures. Focuses on zero-dependency `libc` bypasses, raw Linux kernel syscalls, custom linker scripts, recursive descent command interpreters, 5-stage pipeline hazard resolution, and set-associative L1/L2 cache design.
 
 ---
 
@@ -19,6 +19,7 @@ A laboratory of low-level systems programming implementations, bare-metal simula
 | **[03. Unix Command Interpreter](./03-unix-command-interpreter)** | C11, POSIX Shell | Linux / Unix | Recursive Descent Parser, Grammar Backtracking, State Execution |
 | **[04. CoreMark Performance Profiling](./04-coremark-performance-profiling)** | C11, Clang/LLVM, GCC | Apple Silicon (M2 ARM64) & RISC-V | Compiler Flags (`-O0` to `-Ofast`), ISA Extensions (M, C, GC), ILP |
 | **[05. RISC-V Pipeline & Hazard Analysis](./05-riscv-pipeline-hazard-analysis)** | RISC-V Assembly (RV32I), SystemVerilog | Verilator & GTKWave | 5-Stage Pipeline, Data Forwarding, Load-Use Stalls, Branch Flushing |
+| **[06. RISC-V Cache & Memory Hierarchy Analysis](./06-riscv-cache-hierarchy-analysis)** | RISC-V (RV32GC), SystemVerilog RTL | CORE-V Wally | Harvard L1 I\$/D\$, Write-Back vs. Write-Through, Unified PIPT L2 Design |
 
 ---
 
@@ -59,6 +60,12 @@ A laboratory of low-level systems programming implementations, bare-metal simula
 - **Data Forwarding:** Verifies zero-stall read-after-write (RAW) hazard resolution by forwarding results from the Writeback stage directly back to the ALU inputs.
 - **Load-Use Stalls:** Custom bare-metal RV32I assembly testbench (`lw` immediately followed by a dependent `add`) demonstrating a single-cycle pipeline stall and bubble insertion before forwarding the loaded word.
 
+### 6. RISC-V Cache & Memory Hierarchy Analysis (`06-riscv-cache-hierarchy-analysis`)
+- **Philosophy:** Architectural and RTL evaluation of the Harvard L1 Instruction (`I$`) and Data (`D$`) caches and multi-level memory hierarchy design on the **CORE-V Wally (`rv32gc`)** processor.
+- **Set-Associative Organization:** Evaluates 4-way set-associative L1 `I$` and `D$` configurations ($16\text{ KB}$ capacity per cache, 64 sets/way, 512-bit / 64-byte cache lines, 16-beat AHB burst fills).
+- **Write-Back Consistency:** Analyzes per-line dirty bit tracking, write-allocate store-miss merging, and eviction write-backs versus write-through policies.
+- **Unified L2 Architecture:** Details the RTL design choices for introducing a unified, Physically Indexed Physically Tagged (PIPT) L2 cache across Wally's `IFU`, `LSU`, `EBU`, and `Uncore` subsystems.
+
 ---
 
 ## Build & Run
@@ -91,6 +98,10 @@ make benchmark
 cd ../05-riscv-pipeline-hazard-analysis
 make docker-build
 make docker-sim
+
+# 6. Build the Cache & Memory Hierarchy Technical Report
+cd ../06-riscv-cache-hierarchy-analysis
+make build-report
 ```
 
 ---
