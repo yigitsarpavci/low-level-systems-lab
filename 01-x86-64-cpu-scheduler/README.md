@@ -94,6 +94,7 @@ This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) f
 - **[Unix-Command-Interpreter](../03-unix-command-interpreter)**: Modular C11 Unix shell featuring a recursive descent parser and grammar backtracking.
 - **[CoreMark-Performance-Profiling](../04-coremark-performance-profiling)**: Empirical EEMBC CoreMark v1.0 compiler optimization and RISC-V ISA extension benchmarking suite.
 - **[RISC-V-Pipeline-Hazard-Analysis](../05-riscv-pipeline-hazard-analysis)**: Cycle-accurate CORE-V Wally (`rv32i`) 5-stage RTL pipeline and hazard verification using Verilator and GTKWave.
+- **[RISC-V-Cache-Hierarchy-Analysis](../06-riscv-cache-hierarchy-analysis)**: Harvard L1 I\$/D\$ cache parameterization, write-back coherence, and unified L2 hierarchy design on CORE-V Wally.
 
 ---
 
