@@ -1,5 +1,6 @@
 # Low-Level Systems & Computer Architecture Lab
 
+[![Security: CodeQL | Dependabot](https://img.shields.io/badge/Security-CodeQL%20%7C%20Dependabot%20%7C%20Secret%20scanning-success?logo=github)](https://github.com/yigitsarpavci/low-level-systems-lab/security)
 [![CI](https://github.com/yigitsarpavci/low-level-systems-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/yigitsarpavci/low-level-systems-lab/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![ISA: x86-64 | RISC-V](https://img.shields.io/badge/ISA-x86--64%20%7C%20RISC--V-red)](#lab-modules-overview)
