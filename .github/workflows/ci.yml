@@ -1,0 +1,16 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ipc-subsystem:
+    name: 07 Linux IPC Game Subsystem (build + tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y libncurses-dev
+      - run: make test
+        working-directory: 07-linux-ipc-game-subsystem

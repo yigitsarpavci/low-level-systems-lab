@@ -20,6 +20,7 @@ A laboratory of low-level systems programming implementations, bare-metal simula
 | **[04. CoreMark Performance Profiling](./04-coremark-performance-profiling)** | C11, Clang/LLVM, GCC | Apple Silicon (M2 ARM64) & RISC-V | Compiler Flags (`-O0` to `-Ofast`), ISA Extensions (M, C, GC), ILP |
 | **[05. RISC-V Pipeline & Hazard Analysis](./05-riscv-pipeline-hazard-analysis)** | RISC-V Assembly (RV32I), SystemVerilog | Verilator & GTKWave | 5-Stage Pipeline, Data Forwarding, Load-Use Stalls, Branch Flushing |
 | **[06. RISC-V Cache & Memory Hierarchy Analysis](./06-riscv-cache-hierarchy-analysis)** | RISC-V (RV32GC), SystemVerilog RTL | CORE-V Wally | Harvard L1 I\$/D\$, Write-Back vs. Write-Through, Unified PIPT L2 Design |
+| **[07. Linux IPC Game Subsystem](./07-linux-ipc-game-subsystem)** | C11, POSIX, Bash | Linux / POSIX.1-2008 | Non-Blocking FIFOs, POSIX Signals, `dlopen`/`dlsym` Hot-Swapping, Lock-Free Ring Buffer, `fork`/`exec` |
 
 ---
 
@@ -66,6 +67,14 @@ A laboratory of low-level systems programming implementations, bare-metal simula
 - **Write-Back Consistency:** Analyzes per-line dirty bit tracking, write-allocate store-miss merging, and eviction write-backs versus write-through policies.
 - **Unified L2 Architecture:** Details the RTL design choices for introducing a unified, Physically Indexed Physically Tagged (PIPT) L2 cache across Wally's `IFU`, `LSU`, `EBU`, and `Uncore` subsystems.
 
+### 7. Linux IPC Game Subsystem (`07-linux-ipc-game-subsystem`)
+- **Philosophy:** Decouples a 60 FPS `ncurses` space-shooter engine from its input controllers using only POSIX primitives: no threads, no shared memory, no link-time coupling.
+- **Non-Blocking FIFO Dispatch:** Commands arrive over an `O_RDWR | O_NONBLOCK` named pipe (never signals EOF when a writer disconnects) and are drained into a bounded lock-free ring buffer once per frame.
+- **Signals & Processes:** Reentrancy-safe `sigaction` handlers turn `SIGUSR1`/`SIGTERM` into pause/quit ops; shield and gather workers are spawned with `fork()` + `execl()` and reaped with `waitpid(-1, WNOHANG)`.
+- **Runtime Hot-Swapping:** The FIFO layer lives in `libfifo_management.so`, loaded with `dlopen(RTLD_NOW)` and bound through `dlsym`, so the controller can be replaced without relinking the engine.
+- **Verification:** A dependency-free C test suite (`make test`, 443 checks) covers the ring buffer, signal delivery, FIFO decoding, the dynamic loader and `dispatch()`; it runs in GitHub Actions.
+- **Origin:** Built on the CMPE 322 (Operating Systems) game skeleton; the student implementation lives in `implementation/`. The module was previously the standalone repository [`linux-ipc-game-subsystem`](https://github.com/yigitsarpavci/linux-ipc-game-subsystem).
+
 ---
 
 ## Build & Run
@@ -102,6 +111,11 @@ make docker-sim
 # 6. Build the Cache & Memory Hierarchy Technical Report
 cd ../06-riscv-cache-hierarchy-analysis
 make build-report
+
+# 7. Build and test the Linux IPC Game Subsystem (needs gcc and libncurses-dev)
+cd ../07-linux-ipc-game-subsystem
+make test    # unit tests (443 checks)
+make run     # play the autonomous demo
 ```
 
 ---

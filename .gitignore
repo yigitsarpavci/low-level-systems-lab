@@ -8,3 +8,15 @@
 *~
 *.swp
 .vscode/
+
+# Build outputs of 07-linux-ipc-game-subsystem
+07-linux-ipc-game-subsystem/**/*.o
+07-linux-ipc-game-subsystem/**/*.d
+07-linux-ipc-game-subsystem/**/*.so
+07-linux-ipc-game-subsystem/2D_SPACE_SHOOTER/build/
+07-linux-ipc-game-subsystem/2D_SPACE_SHOOTER/game
+07-linux-ipc-game-subsystem/2D_SPACE_SHOOTER/implementation/shield
+07-linux-ipc-game-subsystem/2D_SPACE_SHOOTER/implementation/gather
+07-linux-ipc-game-subsystem/2D_SPACE_SHOOTER/implementation/game.fifo
+07-linux-ipc-game-subsystem/tests/test_ipc
+*.dSYM/
