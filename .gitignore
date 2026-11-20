@@ -20,3 +20,4 @@
 07-linux-ipc-game-subsystem/2D_SPACE_SHOOTER/implementation/game.fifo
 07-linux-ipc-game-subsystem/tests/test_ipc
 *.dSYM/
+07-linux-ipc-game-subsystem/docs/
