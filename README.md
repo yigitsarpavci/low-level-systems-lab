@@ -73,7 +73,7 @@ A laboratory of low-level systems programming implementations, bare-metal simula
 - **Signals & Processes:** Reentrancy-safe `sigaction` handlers turn `SIGUSR1`/`SIGTERM` into pause/quit ops; shield and gather workers are spawned with `fork()` + `execl()` and reaped with `waitpid(-1, WNOHANG)`.
 - **Runtime Hot-Swapping:** The FIFO layer lives in `libfifo_management.so`, loaded with `dlopen(RTLD_NOW)` and bound through `dlsym`, so the controller can be replaced without relinking the engine.
 - **Verification:** A dependency-free C test suite (`make test`, 443 checks) covers the ring buffer, signal delivery, FIFO decoding, the dynamic loader and `dispatch()`; it runs in GitHub Actions.
-- **Origin:** Built on the CMPE 322 (Operating Systems) game skeleton; the student implementation lives in `implementation/`. The module was previously the standalone repository [`linux-ipc-game-subsystem`](https://github.com/yigitsarpavci/linux-ipc-game-subsystem).
+- **Origin:** Built on the CMPE 322 (Operating Systems) game skeleton; the student implementation lives in `implementation/`. It started as a standalone repository and was merged into this lab.
 
 ---
 
