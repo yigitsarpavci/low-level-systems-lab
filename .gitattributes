@@ -1,0 +1,5 @@
+# Keep language stats focused on the real source (C / Assembly)
+04-coremark-performance-profiling/coremark/docs/** linguist-documentation
+**/report/** linguist-documentation
+*.tex linguist-documentation
+*.html linguist-generated
