@@ -12,6 +12,15 @@ A laboratory of low-level systems programming implementations, bare-metal simula
 
 ---
 
+## Quick Start
+
+```bash
+make -C 07-linux-ipc-game-subsystem test        # POSIX IPC tests (needs gcc + libncurses-dev)
+cd 03-unix-command-interpreter && make && make grade   # C11 shell + reference grader
+```
+
+---
+
 ## Lab Modules Overview
 
 | Module | Architecture / Language | Execution Target | Core Concepts |
