@@ -13,7 +13,7 @@ jobs:
       run:
         working-directory: 01-x86-64-cpu-scheduler
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Assemble, link and grade against the reference outputs
         run: |
           make grade -s | tee grade.txt
@@ -26,7 +26,7 @@ jobs:
       run:
         working-directory: 03-unix-command-interpreter
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: make
       - name: Grade against the reference outputs
         run: |
@@ -37,7 +37,7 @@ jobs:
     name: 07 Linux IPC game subsystem (build + tests)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: sudo apt-get update && sudo apt-get install -y libncurses-dev
       - run: make test
         working-directory: 07-linux-ipc-game-subsystem
