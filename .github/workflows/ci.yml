@@ -6,8 +6,35 @@ on:
   pull_request:
 
 jobs:
+  scheduler-x86-64:
+    name: 01 x86-64 CPU scheduler (assemble + grade)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 01-x86-64-cpu-scheduler
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble, link and grade against the reference outputs
+        run: |
+          make grade -s | tee grade.txt
+          test "$(tail -n 1 grade.txt)" = "100.00"
+
+  unix-shell:
+    name: 03 Unix command interpreter (build + grade)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 03-unix-command-interpreter
+    steps:
+      - uses: actions/checkout@v4
+      - run: make
+      - name: Grade against the reference outputs
+        run: |
+          make grade -s | tee grade.txt
+          test "$(tail -n 1 grade.txt)" = "100.00"
+
   ipc-subsystem:
-    name: 07 Linux IPC Game Subsystem (build + tests)
+    name: 07 Linux IPC game subsystem (build + tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

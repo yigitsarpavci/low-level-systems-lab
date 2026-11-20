@@ -1,5 +1,6 @@
 # Low-Level Systems & Computer Architecture Lab
 
+[![CI](https://github.com/yigitsarpavci/low-level-systems-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/yigitsarpavci/low-level-systems-lab/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![ISA: x86-64 | RISC-V](https://img.shields.io/badge/ISA-x86--64%20%7C%20RISC--V-red)](#lab-modules-overview)
 [![Simulation: Spike | Verilator](https://img.shields.io/badge/Simulation-Spike%20%7C%20Verilator-green)](#lab-modules-overview)
